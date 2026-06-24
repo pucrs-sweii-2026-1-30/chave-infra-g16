@@ -81,12 +81,40 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
+  plus-ms-estoque:
+    build:
+      context: ../plus_ms_estoque
+      dockerfile: Dockerfile
+    container_name: plus-ms-estoque
+    ports:
+      - "${MS_ESTOQUE_PORT:-3002}:3000"
+    depends_on:
+      infra-provisioner:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  plus-mfe-estoque:
+    build:
+      context: ../plus_mfe_estoque
+      dockerfile: Dockerfile
+      args:
+        - VITE_MS_ESTOQUE_URL=http://localhost:${MS_ESTOQUE_PORT:-3002}
+    container_name: plus-mfe-estoque
+    ports:
+      - "${MFE_ESTOQUE_PORT:-4002}:4002"
+    depends_on:
+      infra-provisioner:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
   plus-shell:
     build:
-      context: ../plus-shell
+      # Grupo 16: fork de plus-shell renomeado para chave-shell-g16
+      context: ../chave-shell-g16
       dockerfile: Dockerfile
       args:
         - MFE_AUTH_URL=http://localhost:4001/assets/remoteEntry.js
+        - MFE_ESTOQUE_URL=http://localhost:${MFE_ESTOQUE_PORT:-4002}/assets/remoteEntry.js
     container_name: plus-shell
     ports:
       - "${SHELL_PORT:-3000}:3000"
@@ -99,6 +127,8 @@ services:
       infra-provisioner:
         condition: service_completed_successfully
       plus-mfe-auth:
+        condition: service_started
+      plus-mfe-estoque:
         condition: service_started
     restart: unless-stopped
 
