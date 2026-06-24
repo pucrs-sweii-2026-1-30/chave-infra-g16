@@ -97,14 +97,18 @@ services:
     build:
       context: ../plus_mfe_estoque
       dockerfile: Dockerfile
-      args:
-        - VITE_MS_ESTOQUE_URL=http://localhost:${MS_ESTOQUE_PORT:-3002}
     container_name: plus-mfe-estoque
     ports:
       - "${MFE_ESTOQUE_PORT:-4002}:4002"
+    environment:
+      # plus_ms_estoque nao envia CORS; o proxy server-side do container resolve
+      # isso usando o nome do servico na rede do compose (em vez de localhost).
+      - MS_ESTOQUE_PROXY_TARGET=http://plus-ms-estoque:3000
     depends_on:
       infra-provisioner:
         condition: service_completed_successfully
+      plus-ms-estoque:
+        condition: service_started
     restart: unless-stopped
 
   plus-shell:
